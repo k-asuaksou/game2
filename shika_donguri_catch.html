@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>鹿のどんぐりキャッチ - 飛鳥荘</title>
+<style>
+  :root{
+    --washi:#F7F0DF;
+    --washi-deep:#EEE3C8;
+    --forest:#2F4538;
+    --forest-deep:#22332A;
+    --torii:#C1440E;
+    --torii-deep:#9A3409;
+    --deer-fur:#C99A5B;
+    --deer-fur-deep:#A97C42;
+    --deer-belly:#F4E6C4;
+    --ink:#3A2E25;
+    --gold:#D6A21A;
+    --cream-card:#FFFBF1;
+    --shadow:rgba(40,30,20,0.28);
+    --blush:#F2A89E;
+    --leaf-red:#D1551B;
+    --leaf-light:#F0934B;
+    --acorn-cap:#6B4423;
+    --acorn-body:#D9A463;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    overflow:hidden; touch-action:none;
+    font-family:"BIZ UDPGothic","Hiragino Maru Gothic ProN","Yu Gothic Rounded","Yu Gothic","Hiragino Sans",sans-serif;
+    color:var(--ink);
+    background:var(--forest-deep);
+    -webkit-user-select:none; user-select:none;
+  }
+
+  #app{ position:relative; width:100%; height:100vh; height:100dvh; overflow:hidden; }
+
+  .screen{
+    position:absolute; inset:0;
+    display:none;
+    flex-direction:column; align-items:center;
+    width:100%; height:100%;
+  }
+  .screen.active{ display:flex; }
+
+  /* ============ 背景(共通の和の世界観) ============ */
+  .bg{ position:absolute; inset:0; z-index:0; overflow:hidden;
+    background:radial-gradient(120% 70% at 50% -10%, #FFF7E0 0%, var(--washi) 45%, var(--washi-deep) 100%);
+  }
+  .bg .hill{ position:absolute; left:50%; bottom:-6%; width:140%; height:46%;
+    transform:translateX(-50%); background:var(--forest);
+    border-radius:50% 50% 0 0 / 100% 100% 0 0; opacity:0.9; }
+  .bg .hill.back{ bottom:2%; width:170%; height:34%; background:var(--forest-deep); opacity:0.55; }
+  .bg .torii{ position:absolute; right:6%; bottom:26%; width:18%; max-width:90px; min-width:46px; opacity:0.5; }
+  .bg .torii svg{ width:100%; display:block; }
+  .bg .lantern{ position:absolute; top:3%; width:11%; max-width:54px; min-width:30px; opacity:0.85; }
+  .bg .lantern.left{ left:4%; }
+  .bg .lantern.right{ right:4%; }
+  .bg .lantern svg{ width:100%; display:block; }
+  .bg .treetop{ position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:92%; height:14%; opacity:0.9; }
+  .bg .treetop svg{ width:100%; height:100%; display:block; }
+
+  /* ============ 共通パーツ ============ */
+  .eyebrow{ font-size:clamp(0.85rem,2.6vw,1.1rem); letter-spacing:0.3em; color:var(--torii); font-weight:700; margin-top:1vh; }
+  .title-main{ text-align:center; line-height:1.15; font-weight:800; font-size:clamp(2.1rem,8.6vw,3.4rem);
+    color:var(--ink); text-shadow:0 3px 0 var(--washi-deep); margin:0.4em 0 0; }
+  .title-sub{ text-align:center; font-size:clamp(1rem,3.4vw,1.3rem); color:var(--forest); font-weight:700;
+    margin-top:0.3em; letter-spacing:0.05em; }
+
+  .howto{ display:flex; align-items:center; justify-content:center; gap:3vw;
+    background:var(--cream-card); border:3px solid var(--washi-deep); border-radius:24px;
+    padding:2.4vh 4vw; box-shadow:0 6px 0 var(--shadow); max-width:92vw; }
+  .howto .step{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .howto .step-icon{ font-size:clamp(2rem,7vw,2.6rem); line-height:1; display:flex; align-items:center; justify-content:center; gap:0.08em; }
+  .howto .howto-acorn{ display:inline-block; width:0.85em; flex:none; }
+  .howto .howto-acorn svg{ display:block; width:100%; }
+  .howto .step-label{ font-size:clamp(0.78rem,2.4vw,0.95rem); font-weight:700; color:var(--ink); }
+  .howto .arrow{ font-size:clamp(1.4rem,4vw,1.8rem); color:var(--torii); font-weight:700; }
+
+  .big-button{ appearance:none; border:none; cursor:pointer; font-family:inherit; font-weight:800;
+    color:#FFF8EC; background:linear-gradient(180deg,var(--torii) 0%, var(--torii-deep) 100%);
+    border-radius:999px; padding:2.4vh 10vw; font-size:clamp(1.3rem,5.2vw,1.8rem);
+    box-shadow:0 7px 0 var(--torii-deep), 0 10px 18px var(--shadow); letter-spacing:0.08em;
+    transition:transform .08s ease, box-shadow .08s ease; }
+  .big-button:active{ transform:translateY(5px); box-shadow:0 2px 0 var(--torii-deep), 0 4px 10px var(--shadow); }
+  .big-button.secondary{ background:linear-gradient(180deg,#5A7763 0%, var(--forest) 100%);
+    box-shadow:0 7px 0 var(--forest-deep), 0 10px 18px var(--shadow); }
+  .big-button.secondary:active{ box-shadow:0 2px 0 var(--forest-deep), 0 4px 10px var(--shadow); }
+
+  .sound-toggle{ position:absolute; top:2.6vh; right:3vw; z-index:10;
+    width:clamp(40px,9vw,52px); height:clamp(40px,9vw,52px); border-radius:50%;
+    border:none; background:rgba(255,255,255,0.55); font-size:clamp(1.1rem,4vw,1.4rem);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; }
+
+  /* ============ タイトル画面 ============ */
+  #screen-title .content{ position:relative; z-index:1; width:100%; height:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+    padding:5vh 6vw 4vh; }
+  .title-deer-wrap{ width:clamp(220px,52vw,340px); margin:1vh 0; }
+
+  /* ============ ゲーム画面 ============ */
+  #screen-game .content{ position:relative; z-index:1; width:100%; height:100%; display:flex; flex-direction:column; }
+
+  .hud{ display:flex; align-items:center; justify-content:center; gap:2.4vw; padding:3vh 0 0; z-index:8; }
+  .hud-pill{ display:flex; align-items:center; gap:1.6vw; background:var(--cream-card);
+    border:3px solid var(--washi-deep); border-radius:999px; padding:1vh 4vw;
+    box-shadow:0 5px 0 var(--shadow); font-weight:800; font-size:clamp(1.05rem,4vw,1.4rem); }
+  .hud-pill .hud-icon{ width:clamp(28px,7vw,38px); }
+
+  .stage{ position:relative; flex:1; width:100%; overflow:hidden; touch-action:none; }
+
+  .fall-layer{ position:absolute; inset:0; z-index:3; pointer-events:none; }
+  .falling-item{ position:absolute; transform:translate(-50%,-50%); width:clamp(54px,15vw,92px);
+    will-change:top,left,transform,opacity; }
+  .falling-item.caught{ transition:transform .22s ease-in, opacity .22s ease-in;
+    transform:translate(-50%,-50%) scale(0.15) translateY(-14px); opacity:0; }
+  .falling-item.missed{ transition:transform .35s ease-in, opacity .35s ease-in;
+    transform:translate(-50%,-50%) rotate(50deg) scale(0.8); opacity:0; }
+
+  .point-pop{ position:absolute; transform:translate(-50%,-50%); font-weight:800;
+    font-size:clamp(1.3rem,5.6vw,1.9rem); text-shadow:0 2px 0 #fff, 0 4px 8px rgba(0,0,0,0.18);
+    pointer-events:none; z-index:6; opacity:0; }
+  .point-pop.plus{ color:var(--torii); }
+  .point-pop.minus{ color:#5A7763; }
+  .point-pop.show{ animation:pointFloat .8s ease-out forwards; }
+  @keyframes pointFloat{
+    0%{ opacity:0; transform:translate(-50%,-50%) scale(0.5); }
+    25%{ opacity:1; transform:translate(-50%,-65%) scale(1.15); }
+    100%{ opacity:0; transform:translate(-50%,-150%) scale(1); }
+  }
+
+  .deer-track{ position:absolute; bottom:5%; left:50%; z-index:5;
+    transform:translateX(-50%); pointer-events:none; }
+  .deer-wrap{ position:relative; width:clamp(220px,55vw,360px); }
+  .deer-wrap .lean{ transition:transform .18s ease; transform-box:fill-box; transform-origin:50% 95%; }
+  .deer-wrap.lean-right #deerLean{ transform:rotate(4deg); }
+  .deer-wrap.lean-left #deerLean{ transform:rotate(-4deg); }
+  .deer-wrap.idle{ animation:idleBob 1.8s ease-in-out infinite; }
+  @keyframes idleBob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3%); } }
+  .deer-wrap.idle.yuck{ animation:idleBob 1.8s ease-in-out infinite, yuckShake .45s ease; }
+  @keyframes yuckShake{
+    0%,100%{ transform:translateY(0) translateX(0) rotate(0); }
+    25%{ transform:translateY(-1%) translateX(-3%) rotate(-3deg); }
+    75%{ transform:translateY(-1%) translateX(3%) rotate(3deg); }
+  }
+
+  .antler-sway{ animation:antlerSway 2.8s ease-in-out infinite; transform-box:fill-box; transform-origin:50% 100%; }
+  @keyframes antlerSway{ 0%,100%{ transform:rotate(0deg); } 50%{ transform:rotate(3deg); } }
+
+  #deerTail{ transform-box:fill-box; transform-origin:70% 30%; }
+  #deerTail.wag{ animation:tailWag .2s ease-in-out infinite alternate; }
+  @keyframes tailWag{ 0%{ transform:rotate(-14deg); } 100%{ transform:rotate(22deg); } }
+
+  #mouthClosed{ display:block; }
+  #mouthOpen{ display:none; }
+  .deer-wrap.eating #mouthClosed{ display:none; }
+  .deer-wrap.eating #mouthOpen{ display:block; }
+
+  .speech-bubble{ position:absolute; top:-16%; left:50%; transform:translateX(-50%) scale(0);
+    background:var(--cream-card); border:3px solid var(--ink); border-radius:18px;
+    padding:0.5em 0.9em; font-weight:800; font-size:clamp(1rem,4.2vw,1.35rem);
+    white-space:nowrap; transition:transform .22s cubic-bezier(.4,1.8,.6,1); z-index:6; }
+  .speech-bubble.show{ transform:translateX(-50%) scale(1); }
+  .speech-bubble::after{ content:""; position:absolute; left:50%; bottom:-10px; transform:translateX(-50%);
+    border:10px solid transparent; border-top-color:var(--ink); }
+
+  .sparkles{ position:absolute; inset:0; pointer-events:none; z-index:7; }
+  .sparkle{ position:absolute; font-size:clamp(1.2rem,4.6vw,1.8rem); opacity:0; }
+  .sparkle.show{ animation:sparklePop .7s ease-out forwards; }
+  @keyframes sparklePop{
+    0%{ opacity:0; transform:translateY(0) scale(.4); }
+    25%{ opacity:1; transform:translateY(-8px) scale(1.05); }
+    100%{ opacity:0; transform:translateY(-40px) scale(1); }
+  }
+
+  .drag-hint{ position:absolute; bottom:2%; left:50%; transform:translateX(-50%);
+    font-size:clamp(0.85rem,3.4vw,1.05rem); font-weight:700; color:rgba(58,46,37,0.55);
+    z-index:4; pointer-events:none; transition:opacity .4s ease; }
+
+  /* ============ 結果画面 ============ */
+  #screen-result .content{ position:relative; z-index:1; width:100%; height:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+    padding:6vh 6vw 5vh; text-align:center; }
+  .result-rank{ font-size:clamp(1rem,3.4vw,1.2rem); font-weight:700; color:var(--forest); letter-spacing:0.1em; }
+  .result-title{ font-size:clamp(2rem,7.8vw,3rem); font-weight:800; color:var(--ink);
+    margin:0.3em 0; text-shadow:0 3px 0 var(--washi-deep); }
+  .result-deer-wrap{ width:clamp(190px,46vw,280px); margin:1vh 0; }
+  .result-tally{ display:flex; gap:5vw; justify-content:center; align-items:center; margin:1vh 0; }
+  .tally-item{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .tally-item .tally-icon{ width:clamp(44px,11vw,64px); }
+  .tally-item .tally-count{ font-size:clamp(1.2rem,4.6vw,1.6rem); font-weight:800; color:var(--ink); }
+  .result-score{ font-size:clamp(1.05rem,3.8vw,1.3rem); font-weight:700; color:var(--ink);
+    background:var(--cream-card); border:3px solid var(--washi-deep); border-radius:16px; padding:1.2vh 6vw; }
+  .result-buttons{ display:flex; flex-direction:column; gap:1.4vh; width:100%; align-items:center; }
+
+  @media (prefers-reduced-motion:reduce){
+    .deer-wrap.idle, .antler-sway { animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ タイトル画面 ============ -->
+  <div class="screen active" id="screen-title">
+    <div class="bg">
+      <div class="hill back"></div>
+      <div class="hill"></div>
+      <div class="torii">
+        <svg viewBox="0 0 100 140"><g fill="#2F4538"><rect x="8" y="30" width="84" height="10"/><rect x="6" y="22" width="88" height="9" rx="3"/><rect x="18" y="32" width="11" height="100"/><rect x="71" y="32" width="11" height="100"/><rect x="40" y="55" width="20" height="9"/></g></svg>
+      </div>
+      <div class="lantern left">
+        <svg viewBox="0 0 60 100"><g><rect x="26" y="0" width="8" height="10" fill="#5E4322"/><ellipse cx="30" cy="46" rx="26" ry="36" fill="#C1440E"/><rect x="10" y="40" width="40" height="12" fill="#5E4322" opacity="0.5"/><rect x="26" y="82" width="8" height="14" fill="#5E4322"/></g></svg>
+      </div>
+      <div class="lantern right">
+        <svg viewBox="0 0 60 100"><g><rect x="26" y="0" width="8" height="10" fill="#5E4322"/><ellipse cx="30" cy="46" rx="26" ry="36" fill="#C1440E"/><rect x="10" y="40" width="40" height="12" fill="#5E4322" opacity="0.5"/><rect x="26" y="82" width="8" height="14" fill="#5E4322"/></g></svg>
+      </div>
+    </div>
+
+    <div class="content">
+      <div style="text-align:center;">
+        <div class="eyebrow">飛鳥荘 ・ 奈良公園</div>
+        <h1 class="title-main">鹿の<br>どんぐりキャッチ</h1>
+        <div class="title-sub">ゆびで鹿を うごかして キャッチしよう</div>
+      </div>
+
+      <div class="title-deer-wrap" id="titleDeerHolder"></div>
+
+      <div class="howto">
+        <div class="step">
+          <div class="step-icon">👆↔️</div>
+          <div class="step-label">ゆびで うごかす</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="step">
+          <div class="step-icon"><span class="howto-acorn" id="howtoAcornHolder"></span>🍁</div>
+          <div class="step-label">キャッチ!</div>
+        </div>
+      </div>
+
+      <button class="big-button" id="startBtn">はじめる</button>
+    </div>
+  </div>
+
+  <!-- ============ ゲーム画面 ============ -->
+  <div class="screen" id="screen-game">
+    <div class="bg">
+      <div class="hill back"></div>
+      <div class="hill"></div>
+      <div class="treetop">
+        <svg viewBox="0 0 400 60" preserveAspectRatio="none">
+          <g fill="#2F4538">
+            <ellipse cx="40" cy="0" rx="70" ry="34"/>
+            <ellipse cx="150" cy="-6" rx="90" ry="40"/>
+            <ellipse cx="270" cy="0" rx="85" ry="36"/>
+            <ellipse cx="370" cy="-4" rx="60" ry="32"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <button class="sound-toggle" id="soundBtn">🔊</button>
+
+    <div class="content">
+      <div class="hud">
+        <div class="hud-pill">
+          <div class="hud-icon" id="hudIconHolder"></div>
+          <span id="hudCount">0 / 10</span>
+        </div>
+      </div>
+
+      <div class="stage" id="stage">
+        <div class="fall-layer" id="fallLayer"></div>
+
+        <div class="deer-track" id="deerTrack">
+          <div class="deer-wrap idle" id="deerWrap"></div>
+          <div class="speech-bubble" id="speechBubble"></div>
+          <div class="sparkles" id="sparkles"></div>
+        </div>
+
+        <div class="drag-hint" id="dragHint">← ゆびで うごかしてね →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 結果画面 ============ -->
+  <div class="screen" id="screen-result">
+    <div class="bg">
+      <div class="hill back"></div>
+      <div class="hill"></div>
+    </div>
+    <div class="content">
+      <div>
+        <div class="result-rank">けっか</div>
+        <div class="result-title">いっぱい食べたね!</div>
+      </div>
+
+      <div class="result-deer-wrap" id="resultDeerHolder"></div>
+
+      <div style="display:flex; flex-direction:column; align-items:center; gap:2vh; width:100%;">
+        <div class="result-tally" id="resultTally"></div>
+        <div class="result-score" id="resultScore">合計 10個 あつめたよ!</div>
+        <div class="result-buttons">
+          <button class="big-button" id="retryBtn">もう一度遊ぶ</button>
+          <button class="big-button secondary" id="titleBtn">タイトルへ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ===================================================================
+     鹿のSVG(正面向けのちびキャラ。前作「鹿せんべいタッチ」と共通の世界観)
+  =================================================================== */
+  function buildDeerSVG(){
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns,"svg");
+    svg.setAttribute("viewBox","0 0 300 300");
+    svg.setAttribute("width","100%");
+    svg.style.display = "block";
+    svg.style.overflow = "visible";
+
+    svg.innerHTML = `
+      <ellipse cx="150" cy="262" rx="72" ry="13" fill="rgba(40,30,20,0.20)"></ellipse>
+
+      <g id="deerLean" class="lean">
+        <rect x="118" y="232" width="15" height="26" rx="6" fill="#A97C42"></rect>
+        <rect x="167" y="232" width="15" height="26" rx="6" fill="#A97C42"></rect>
+
+        <g id="deerTail">
+          <circle cx="218" cy="196" r="15" fill="#F4E6C4"></circle>
+        </g>
+
+        <ellipse cx="150" cy="195" rx="80" ry="62" fill="#C99A5B"></ellipse>
+        <ellipse cx="150" cy="220" rx="46" ry="36" fill="#F4E6C4"></ellipse>
+        <ellipse cx="112" cy="152" rx="9" ry="6" fill="#F4E6C4" opacity="0.85"></ellipse>
+        <ellipse cx="190" cy="150" rx="9" ry="6" fill="#F4E6C4" opacity="0.85"></ellipse>
+        <ellipse cx="150" cy="138" rx="8" ry="5" fill="#F4E6C4" opacity="0.85"></ellipse>
+
+        <g id="deerHead">
+          <g class="antler-sway" style="transform-origin:170px 95px;">
+            <path d="M168,96 L181,54" stroke="#8B6239" stroke-width="7" fill="none" stroke-linecap="round"></path>
+            <path d="M181,54 L171,37" stroke="#8B6239" stroke-width="6" fill="none" stroke-linecap="round"></path>
+            <path d="M181,54 L197,45" stroke="#8B6239" stroke-width="6" fill="none" stroke-linecap="round"></path>
+            <circle cx="168" cy="96" r="5" fill="#6B4423"></circle>
+          </g>
+          <g class="antler-sway" style="transform-origin:132px 95px;">
+            <path d="M132,96 L119,54" stroke="#8B6239" stroke-width="7" fill="none" stroke-linecap="round"></path>
+            <path d="M119,54 L129,37" stroke="#8B6239" stroke-width="6" fill="none" stroke-linecap="round"></path>
+            <path d="M119,54 L103,45" stroke="#8B6239" stroke-width="6" fill="none" stroke-linecap="round"></path>
+            <circle cx="132" cy="96" r="5" fill="#6B4423"></circle>
+          </g>
+
+          <circle cx="150" cy="138" r="58" fill="#C99A5B"></circle>
+          <ellipse cx="150" cy="163" rx="32" ry="23" fill="#F4E6C4"></ellipse>
+
+          <circle cx="119" cy="148" r="9" fill="#F2A89E" opacity="0.55"></circle>
+          <circle cx="181" cy="148" r="9" fill="#F2A89E" opacity="0.55"></circle>
+
+          <g id="eyesNormal">
+            <circle cx="128" cy="128" r="8" fill="#3A2E25"></circle>
+            <circle cx="172" cy="128" r="8" fill="#3A2E25"></circle>
+            <circle cx="125" cy="125" r="2.4" fill="#FFFFFF"></circle>
+            <circle cx="169" cy="125" r="2.4" fill="#FFFFFF"></circle>
+          </g>
+
+          <ellipse cx="150" cy="158" rx="7" ry="5" fill="#3A2E25"></ellipse>
+
+          <path id="mouthClosed" d="M138,174 Q150,180 162,174" stroke="#3A2E25" stroke-width="4" fill="none" stroke-linecap="round"></path>
+          <ellipse id="mouthOpen" cx="150" cy="176" rx="11" ry="9" fill="#7A4B33"></ellipse>
+        </g>
+      </g>
+    `;
+    return svg;
+  }
+
+  /* ===================================================================
+     落下アイテム(どんぐり・落ち葉)のSVG
+  =================================================================== */
+  function buildAcornSVG(){
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns,"svg");
+    svg.setAttribute("viewBox","0 0 100 120");
+    svg.style.display = "block";
+    svg.innerHTML = `
+      <rect x="46" y="2" width="8" height="12" rx="3" fill="#5E4322"></rect>
+      <path d="M20,34 Q20,14 50,14 Q80,14 80,34 L80,47 Q50,56 20,47 Z" fill="#6B4423"></path>
+      <path d="M28,24 L34,38 M44,18 L48,34 M60,18 L58,34 M72,24 L66,38" stroke="#4F3219" stroke-width="2" opacity="0.5" stroke-linecap="round"></path>
+      <path d="M22,47 Q17,90 50,110 Q83,90 78,47 Q50,57 22,47 Z" fill="#D9A463"></path>
+      <path d="M50,57 L50,104 M38,64 L40,90 M62,64 L60,90" stroke="#A9783E" stroke-width="2" opacity="0.45" stroke-linecap="round"></path>
+    `;
+    return svg;
+  }
+
+  function buildLeafSVG(){
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns,"svg");
+    svg.setAttribute("viewBox","0 0 100 120");
+    svg.style.display = "block";
+    svg.innerHTML = `
+      <rect x="46" y="90" width="8" height="18" rx="3" fill="#5E4322"></rect>
+      <path d="M50,6 C66,10 84,28 88,52 C92,76 72,94 50,94 C28,94 8,76 12,52 C16,28 34,10 50,6 Z" fill="#D1551B"></path>
+      <path d="M50,16 C62,20 76,34 79,52 C82,72 66,86 50,86 C44,86 39,84 35,81 C50,78 64,66 62,48 C60,32 54,22 50,16 Z" fill="#F0934B" opacity="0.55"></path>
+      <path d="M50,22 L50,88 M50,42 L32,56 M50,42 L68,56 M50,62 L36,74 M50,62 L64,74" stroke="#9A3409" stroke-width="2" opacity="0.55" stroke-linecap="round" fill="none"></path>
+    `;
+    return svg;
+  }
+
+  function buildMushroomSVG(){
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns,"svg");
+    svg.setAttribute("viewBox","0 0 100 120");
+    svg.style.display = "block";
+    svg.innerHTML = `
+      <rect x="38" y="62" width="24" height="48" rx="10" fill="#F4E6C4"></rect>
+      <path d="M10,62 Q10,16 50,12 Q90,16 90,62 Q50,74 10,62 Z" fill="#E0483C"></path>
+      <path d="M10,62 Q50,72 90,62" stroke="#A92E22" stroke-width="3" opacity="0.4" fill="none" stroke-linecap="round"></path>
+      <circle cx="32" cy="32" r="7" fill="#FBEFD9"></circle>
+      <circle cx="64" cy="28" r="6" fill="#FBEFD9"></circle>
+      <circle cx="48" cy="46" r="5.5" fill="#FBEFD9"></circle>
+      <circle cx="74" cy="46" r="5" fill="#FBEFD9"></circle>
+      <circle cx="22" cy="50" r="4.5" fill="#FBEFD9"></circle>
+    `;
+    return svg;
+  }
+
+  /* ===================================================================
+     状態管理
+  =================================================================== */
+  const TARGET = 10;
+  const FALL_SPEED_BASE = 24;   // %/秒(ステージ高さに対する割合)
+  const FALL_SPEED_MAX  = 36;
+  const SPAWN_BASE = 1100;      // ms
+  const SPAWN_MIN  = 650;
+
+  const POINTS = { acorn: 1, leaf: 2, mushroom: -1 };
+  // 出現比率: どんぐり55% / 毒キノコ25% / 落ち葉20%(落ち葉は出現頻度を下げて代わりに高得点)
+  const TYPE_TABLE = [
+    ["acorn", 0.55],
+    ["mushroom", 0.25],
+    ["leaf", 0.20]
+  ];
+  function pickItemType(){
+    const r = Math.random();
+    let acc = 0;
+    for (let i=0;i<TYPE_TABLE.length;i++){
+      acc += TYPE_TABLE[i][1];
+      if (r < acc) return TYPE_TABLE[i][0];
+    }
+    return TYPE_TABLE[0][0];
+  }
+
+  const state = {
+    score: 0,
+    totalCaught: 0,
+    counts: { acorn:0, leaf:0, mushroom:0 },
+    running: false,
+    soundOn: true,
+    deerLeftPercent: 50,
+    deerMargin: 12,
+    mouthYPercent: 55,
+    items: [],
+    lastSpawnAt: 0,
+    spawnInterval: SPAWN_BASE,
+    lastFrameTime: 0,
+    rafId: null
+  };
+
+  /* ===================================================================
+     画面切り替え
+  =================================================================== */
+  const screens = {
+    title: document.getElementById("screen-title"),
+    game: document.getElementById("screen-game"),
+    result: document.getElementById("screen-result")
+  };
+  function showScreen(name){
+    Object.values(screens).forEach(s => s.classList.remove("active"));
+    screens[name].classList.add("active");
+  }
+
+  /* ===================================================================
+     サウンド(簡易・効果音のみ。外部ファイル不要)
+  =================================================================== */
+  let audioCtx = null;
+  function ensureAudio(){
+    if (!audioCtx){
+      try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e){ audioCtx = null; }
+    }
+  }
+  function beep(freqs, dur){
+    if (!state.soundOn) return;
+    ensureAudio();
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    freqs.forEach((f, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = f;
+      gain.gain.value = 0.0001;
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      const t0 = now + i * dur;
+      gain.gain.exponentialRampToValueAtTime(0.16, t0 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.02);
+    });
+  }
+  function playCatchSound(){ beep([520, 740], 0.10); }
+  function playYuckSound(){ beep([300, 200], 0.13); }
+
+  /* ===================================================================
+     タイトル / 結果画面の鹿(静止・装飾用)
+  =================================================================== */
+  const titleDeer = buildDeerSVG();
+  document.getElementById("titleDeerHolder").appendChild(titleDeer);
+
+  const resultDeer = buildDeerSVG();
+  document.getElementById("resultDeerHolder").appendChild(resultDeer);
+
+  const hudIconHolder = document.getElementById("hudIconHolder");
+  hudIconHolder.appendChild(buildAcornSVG());
+
+  document.getElementById("howtoAcornHolder").appendChild(buildAcornSVG());
+
+  /* ===================================================================
+     ゲーム画面の鹿(操作対象)
+  =================================================================== */
+  const deerWrap = document.getElementById("deerWrap");
+  const gameDeerSVG = buildDeerSVG();
+  deerWrap.appendChild(gameDeerSVG);
+  const deerTrack = document.getElementById("deerTrack");
+  const deerTail = gameDeerSVG.querySelector("#deerTail");
+  const speechBubble = document.getElementById("speechBubble");
+  const sparklesLayer = document.getElementById("sparkles");
+  const hudCount = document.getElementById("hudCount");
+  const stage = document.getElementById("stage");
+  const fallLayer = document.getElementById("fallLayer");
+  const dragHint = document.getElementById("dragHint");
+  const soundBtn = document.getElementById("soundBtn");
+
+  function setSpeech(text, show){
+    speechBubble.textContent = text;
+    speechBubble.classList.toggle("show", !!show);
+  }
+
+  function popSparkles(){
+    sparklesLayer.innerHTML = "";
+    const glyphs = ["✨","💕","⭐"];
+    for (let i=0;i<4;i++){
+      const el = document.createElement("div");
+      el.className = "sparkle";
+      el.textContent = glyphs[i % glyphs.length];
+      el.style.left = (20 + Math.random()*55) + "%";
+      el.style.top = (8 + Math.random()*26) + "%";
+      sparklesLayer.appendChild(el);
+      requestAnimationFrame(() => el.classList.add("show"));
+    }
+  }
+
+  /* ===================================================================
+     鹿の左右移動(ドラッグ/タップ追従)
+  =================================================================== */
+  function recalcDeerMargin(){
+    const stageRect = stage.getBoundingClientRect();
+    const deerW = deerWrap.offsetWidth;
+    state.deerMargin = Math.min(40, (deerW / stageRect.width * 100) * 0.42);
+    state.mouthYPercent = 100 - ( (stage.clientHeight - (deerTrack.getBoundingClientRect().top - stageRect.top)) / stage.clientHeight * 100 ) + 5;
+    // 口の位置をシンプルに再計算(鹿トラックの上端付近・頭の高さ分上)
+    const trackTopPercent = ((deerTrack.getBoundingClientRect().top - stageRect.top) / stageRect.height) * 100;
+    const headHeightPercent = (deerWrap.offsetHeight * 0.46 / stageRect.height) * 100;
+    state.mouthYPercent = Math.max(5, trackTopPercent - headHeightPercent * 0.15);
+  }
+
+  function setDeerLeftPercent(pct){
+    const min = state.deerMargin;
+    const max = 100 - state.deerMargin;
+    const clamped = Math.max(min, Math.min(max, pct));
+    const prev = state.deerLeftPercent;
+    state.deerLeftPercent = clamped;
+    deerTrack.style.left = clamped + "%";
+
+    const dx = clamped - prev;
+    deerWrap.classList.remove("lean-left","lean-right");
+    if (dx > 0.4) deerWrap.classList.add("lean-right");
+    else if (dx < -0.4) deerWrap.classList.add("lean-left");
+  }
+
+  let dragging = false;
+  function pointerToPercent(clientX){
+    const rect = stage.getBoundingClientRect();
+    return ((clientX - rect.left) / rect.width) * 100;
+  }
+  function onPointerDown(e){
+    if (!state.running) return;
+    dragging = true;
+    dragHint.style.opacity = "0";
+    setDeerLeftPercent(pointerToPercent(e.clientX));
+    try{ stage.setPointerCapture(e.pointerId); }catch(err){}
+  }
+  function onPointerMove(e){
+    if (!dragging || !state.running) return;
+    setDeerLeftPercent(pointerToPercent(e.clientX));
+  }
+  function onPointerUp(e){
+    dragging = false;
+    try{ stage.releasePointerCapture(e.pointerId); }catch(err){}
+  }
+  stage.addEventListener("pointerdown", onPointerDown);
+  stage.addEventListener("pointermove", onPointerMove);
+  stage.addEventListener("pointerup", onPointerUp);
+  stage.addEventListener("pointercancel", onPointerUp);
+
+  /* ===================================================================
+     アイテムの生成・物理・当たり判定
+  =================================================================== */
+  function spawnItem(){
+    const type = pickItemType();
+    const xPercent = 10 + Math.random()*80;
+    const el = document.createElement("div");
+    el.className = "falling-item";
+    let icon;
+    if (type === "acorn") icon = buildAcornSVG();
+    else if (type === "leaf") icon = buildLeafSVG();
+    else icon = buildMushroomSVG();
+    el.appendChild(icon);
+    el.style.left = xPercent + "%";
+    el.style.top = "-8%";
+    fallLayer.appendChild(el);
+
+    state.items.push({
+      el: el,
+      type: type,
+      xPercent: xPercent,
+      yPercent: -8,
+      speed: FALL_SPEED_BASE + Math.random()*6 + (state.totalCaught/TARGET)*(FALL_SPEED_MAX-FALL_SPEED_BASE),
+      done: false
+    });
+  }
+
+  function showPointPop(item, points){
+    const pop = document.createElement("div");
+    pop.className = "point-pop show " + (points >= 0 ? "plus" : "minus");
+    pop.style.left = item.xPercent + "%";
+    pop.style.top = item.yPercent + "%";
+    pop.textContent = (points > 0 ? "+" : "") + points;
+    fallLayer.appendChild(pop);
+    setTimeout(() => { if (pop.parentNode) pop.parentNode.removeChild(pop); }, 850);
+  }
+
+  function resolveCatch(item){
+    item.done = true;
+    item.el.classList.add("caught");
+    state.totalCaught++;
+    state.counts[item.type]++;
+
+    const points = POINTS[item.type];
+    state.score = Math.max(0, Math.min(TARGET, state.score + points));
+    hudCount.textContent = state.score + " / " + TARGET;
+    showPointPop(item, points);
+
+    if (item.type === "mushroom"){
+      deerWrap.classList.add("yuck");
+      setSpeech("まずい!", true);
+      playYuckSound();
+    } else {
+      deerWrap.classList.add("eating");
+      deerTail.classList.add("wag");
+      setSpeech(item.type === "leaf" ? "おいしい!" : "もぐもぐ!", true);
+      popSparkles();
+      playCatchSound();
+    }
+
+    setTimeout(() => {
+      deerWrap.classList.remove("eating","yuck");
+      deerTail.classList.remove("wag");
+      setSpeech("", false);
+    }, 380);
+
+    setTimeout(() => { if (item.el.parentNode) item.el.parentNode.removeChild(item.el); }, 260);
+
+    if (state.score >= TARGET){
+      after(420, finishGame);
+    }
+  }
+
+  function resolveMiss(item){
+    item.done = true;
+    item.el.classList.add("missed");
+    setTimeout(() => { if (item.el.parentNode) item.el.parentNode.removeChild(item.el); }, 380);
+  }
+
+  function gameTick(timestamp){
+    if (!state.running) return;
+    if (!state.lastFrameTime) state.lastFrameTime = timestamp;
+    const dt = Math.min(0.05, (timestamp - state.lastFrameTime) / 1000);
+    state.lastFrameTime = timestamp;
+
+    if (timestamp - state.lastSpawnAt > state.spawnInterval){
+      spawnItem();
+      state.lastSpawnAt = timestamp;
+      state.spawnInterval = Math.max(SPAWN_MIN, SPAWN_BASE - state.totalCaught*45);
+    }
+
+    const toleranceX = state.deerMargin * 0.62;
+    const toleranceY = 7;
+
+    for (let i = state.items.length - 1; i >= 0; i--){
+      const item = state.items[i];
+      if (item.done){
+        state.items.splice(i,1);
+        continue;
+      }
+      item.yPercent += item.speed * dt;
+      item.el.style.top = item.yPercent + "%";
+
+      if (!item.done && Math.abs(item.yPercent - state.mouthYPercent) < toleranceY &&
+          Math.abs(item.xPercent - state.deerLeftPercent) < toleranceX){
+        resolveCatch(item);
+        continue;
+      }
+      if (!item.done && item.yPercent > 108){
+        resolveMiss(item);
+      }
+    }
+
+    state.rafId = requestAnimationFrame(gameTick);
+  }
+
+  /* ===================================================================
+     タイマー管理
+  =================================================================== */
+  const timers = [];
+  function after(ms, fn){ const id = setTimeout(fn, ms); timers.push(id); return id; }
+  function clearTimers(){ timers.forEach(t => clearTimeout(t)); timers.length = 0; }
+
+  /* ===================================================================
+     ゲーム開始・終了
+  =================================================================== */
+  function startGame(){
+    clearTimers();
+    fallLayer.innerHTML = "";
+    state.items = [];
+    state.score = 0;
+    state.totalCaught = 0;
+    state.counts = { acorn:0, leaf:0, mushroom:0 };
+    state.lastSpawnAt = 0;
+    state.lastFrameTime = 0;
+    state.spawnInterval = SPAWN_BASE;
+    state.running = true;
+
+    hudCount.textContent = "0 / " + TARGET;
+    deerWrap.classList.remove("eating","yuck","lean-left","lean-right");
+    setSpeech("", false);
+    dragHint.style.opacity = "1";
+
+    showScreen("game");
+
+    requestAnimationFrame(() => {
+      recalcDeerMargin();
+      setDeerLeftPercent(50);
+      state.rafId = requestAnimationFrame(gameTick);
+    });
+  }
+
+  function finishGame(){
+    state.running = false;
+    if (state.rafId) cancelAnimationFrame(state.rafId);
+    clearTimers();
+
+    document.getElementById("resultScore").textContent = "合計 " + state.score + "点 あつめたよ!";
+
+    const tally = document.getElementById("resultTally");
+    tally.innerHTML = "";
+
+    const acornBox = document.createElement("div");
+    acornBox.className = "tally-item";
+    const acornIcon = document.createElement("div");
+    acornIcon.className = "tally-icon";
+    acornIcon.appendChild(buildAcornSVG());
+    const acornCount = document.createElement("div");
+    acornCount.className = "tally-count";
+    acornCount.textContent = state.counts.acorn + "個";
+    acornBox.appendChild(acornIcon); acornBox.appendChild(acornCount);
+
+    const leafBox = document.createElement("div");
+    leafBox.className = "tally-item";
+    const leafIcon = document.createElement("div");
+    leafIcon.className = "tally-icon";
+    leafIcon.appendChild(buildLeafSVG());
+    const leafCount = document.createElement("div");
+    leafCount.className = "tally-count";
+    leafCount.textContent = state.counts.leaf + "個";
+    leafBox.appendChild(leafIcon); leafBox.appendChild(leafCount);
+
+    const mushroomBox = document.createElement("div");
+    mushroomBox.className = "tally-item";
+    const mushroomIcon = document.createElement("div");
+    mushroomIcon.className = "tally-icon";
+    mushroomIcon.appendChild(buildMushroomSVG());
+    const mushroomCount = document.createElement("div");
+    mushroomCount.className = "tally-count";
+    mushroomCount.textContent = state.counts.mushroom + "個";
+    mushroomBox.appendChild(mushroomIcon); mushroomBox.appendChild(mushroomCount);
+
+    tally.appendChild(acornBox);
+    tally.appendChild(leafBox);
+    tally.appendChild(mushroomBox);
+
+    deerWrap.classList.remove("eating","yuck");
+    deerTail.classList.remove("wag");
+    resultDeer.querySelector("#deerTail").classList.add("wag");
+
+    showScreen("result");
+  }
+
+  window.addEventListener("resize", () => { if (state.running) recalcDeerMargin(); });
+
+  /* ===================================================================
+     ボタン類
+  =================================================================== */
+  document.getElementById("startBtn").addEventListener("click", () => { ensureAudio(); startGame(); });
+  document.getElementById("retryBtn").addEventListener("click", startGame);
+  document.getElementById("titleBtn").addEventListener("click", () => {
+    state.running = false;
+    if (state.rafId) cancelAnimationFrame(state.rafId);
+    clearTimers();
+    showScreen("title");
+  });
+  soundBtn.addEventListener("click", () => {
+    state.soundOn = !state.soundOn;
+    soundBtn.textContent = state.soundOn ? "🔊" : "🔇";
+  });
+
+})();
+</script>
+</body>
+</html>
